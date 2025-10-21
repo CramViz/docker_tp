@@ -25,7 +25,7 @@ jobs:
         run: |
           mvn -B -ntp clean verify sonar:sonar \
             -Dsonar.projectKey=cramviz \
-            -Dsonar.organization=Vicram \
+            -Dsonar.organization=cramviz \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.login=${SONAR_TOKEN} \
             --file ./docker-backend-api/pom.xml
