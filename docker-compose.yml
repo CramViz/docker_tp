@@ -1,0 +1,50 @@
+services:
+  database:
+    build:
+      context: ./docker-db
+    image: my-postgres:1.0
+    container_name: db
+    environment:
+      POSTGRES_DB: db
+      POSTGRES_USER: usr
+      POSTGRES_PASSWORD: pwd
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./docker-backend-api
+    image: my-backend:api-1.1
+    container_name: backend
+    environment:
+      DB_HOST: database
+      DB_NAME: db
+      DB_USER: usr
+      DB_PASSWORD: pwd
+    depends_on:
+      - database
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  httpd:
+    build:
+      context: ./docker-httpd
+    image: my-httpd:1.1
+    container_name: httpd
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+
+volumes:
+  pgdata:

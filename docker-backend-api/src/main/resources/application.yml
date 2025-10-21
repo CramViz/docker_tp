@@ -1,0 +1,12 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: simpleapi
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:db}:5432/${DB_NAME:db}
+    username: ${DB_USER:usr}
+    password: ${DB_PASSWORD:pwd}
+    hikari:
+      maximum-pool-size: 5
