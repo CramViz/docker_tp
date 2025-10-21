@@ -19,8 +19,16 @@ jobs:
           java-version: '21'
           cache: 'maven'
 
-      - name: Build & test (Maven verify)
-        run: mvn -B -ntp clean verify --file ./docker-backend-api/pom.xml
+      - name: Build, test & SonarCloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn -B -ntp clean verify sonar:sonar \
+            -Dsonar.projectKey=<cramviz> \
+            -Dsonar.organization=<Vicram> \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=${SONAR_TOKEN} \
+            --file ./docker-backend-api/pom.xml
 
   build-and-push-docker-image:
     needs: test-backend
