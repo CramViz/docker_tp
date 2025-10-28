@@ -66,3 +66,48 @@ jobs:
           context: ./docker-httpd
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-httpd:latest
           push: ${{ github.ref == 'refs/heads/main' }}
+
+  # Job 3: Deploy
+  deploy:
+    needs: build-and-push-docker-image
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+
+      - name: Create Ansible vault password file
+        run: |
+          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > /tmp/vault_pass.txt
+          chmod 600 /tmp/vault_pass.txt
+
+      - name: Deploy with Ansible
+        run: |
+          cd ansible
+          ansible-playbook -i inventories/setup.yml deploy.yml \
+            --vault-password-file /tmp/vault_pass.txt \
+            -e "backend_image=${{ secrets.DOCKERHUB_USERNAME }}/my-backend:latest"
+
+      - name: Clean up sensitive files
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_rsa /tmp/vault_pass.txt
+
+      - name: Health check
+        run: |
+          sleep 10
+          curl -f http://${{ secrets.DEPLOY_HOST }}/api/ || exit 1
+          curl -f http://${{ secrets.DEPLOY_HOST }}/api/students || exit 1
+          echo "✅ Deployment successful and healthy!"
+
