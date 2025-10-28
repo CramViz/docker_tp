@@ -1,59 +1,37 @@
-------
-
-- name: Deploy Docker application- name: Deploy 3-tier app
-
-  hosts: all  hosts: prod
-
-  become: yes  become: yes
-
-  vars:  gather_facts: true
-
-    backend_image: "cramviz/my-backend:latest"  vars:
-
-    db_image: "cramviz/my-postgres:latest"    ansible_python_interpreter: /usr/bin/python3
-
-    httpd_image: "cramviz/my-httpd:latest"    project_dir: /opt/docker-3tiers
-
-    network_name: "app-network"    git_repo: 'https://github.com/CramViz/docker_tp.git'  # adjust if your repo differs
-
+---
+- name: Deploy 3-tier application
+  hosts: prod
+  become: yes
+  gather_facts: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    backend_image: "cramviz/my-backend:latest"
+    httpd_image: "cramviz/my-httpd:latest"
     network_name: app-network
-
-  tasks:    db_image: my-postgres:1.0
-
-    - name: Install Docker    backend_image: my-backend:api-1.1
-
-      apt:    httpd_image: my-httpd:1.1
-
-        name:    db_env:
-
-          - docker.io      POSTGRES_DB: db
-
-          - docker-compose      POSTGRES_USER: usr
-
-        state: present      POSTGRES_PASSWORD: pwd
-
-        update_cache: yes    app_env:
-
+    app_env:
       DB_HOST: db
+      DB_NAME: db
+      DB_USER: usr
+      DB_PASSWORD: pwd
 
-    - name: Start Docker service      DB_NAME: db
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - docker.io
+          - python3-docker
+        state: present
+        update_cache: yes
 
-      service:      DB_USER: usr
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
 
-        name: docker      DB_PASSWORD: pwd
-
-        state: started  roles:
-
-        enabled: yes    - install_docker
-
-    - create_network
-
-    - name: Create Docker network    - launch_database
-
-      community.docker.docker_network:    - launch_app
-
-        name: "{{ network_name }}"    - launch_proxy
-
+    - name: Create Docker network
+      community.docker.docker_network:
+        name: "{{ network_name }}"
         state: present
 
     - name: Pull backend image
@@ -61,6 +39,14 @@
         name: "{{ backend_image }}"
         source: pull
         state: present
+        force_source: yes
+
+    - name: Pull httpd image
+      community.docker.docker_image:
+        name: "{{ httpd_image }}"
+        source: pull
+        state: present
+        force_source: yes
 
     - name: Stop old backend container
       community.docker.docker_container:
@@ -76,11 +62,7 @@
         restart_policy: always
         networks:
           - name: "{{ network_name }}"
-        env:
-          DB_HOST: "db"
-          DB_NAME: "db"
-          DB_USER: "usr"
-          DB_PASSWORD: "pwd"
+        env: "{{ app_env }}"
         ports:
           - "8080:8080"
 
@@ -109,3 +91,4 @@
       until: result.status == 200
       retries: 30
       delay: 2
+      ignore_errors: yes
