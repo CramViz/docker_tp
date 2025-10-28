@@ -6,6 +6,7 @@
   vars:
     ansible_python_interpreter: /usr/bin/python3
     backend_image: "cramviz/my-backend:latest"
+    frontend_image: "cramviz/my-frontend:latest"
     httpd_image: "cramviz/my-httpd:latest"
     network_name: app-network
     app_env:
@@ -48,6 +49,13 @@
         state: present
         force_source: yes
 
+    - name: Pull frontend image
+      community.docker.docker_image:
+        name: "{{ frontend_image }}"
+        source: pull
+        state: present
+        force_source: yes
+
     - name: Stop old backend container
       community.docker.docker_container:
         name: backend
@@ -71,6 +79,21 @@
         name: httpd
         state: absent
       ignore_errors: yes
+
+    - name: Stop old frontend container
+      community.docker.docker_container:
+        name: frontend
+        state: absent
+      ignore_errors: yes
+
+    - name: Run frontend container
+      community.docker.docker_container:
+        name: frontend
+        image: "{{ frontend_image }}"
+        state: started
+        restart_policy: always
+        networks:
+          - name: "{{ network_name }}"
 
     - name: Run httpd container
       community.docker.docker_container:

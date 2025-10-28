@@ -30,6 +30,15 @@ services:
       - app-network
     restart: unless-stopped
 
+  frontend:
+    build:
+      context: ./docker-frontend
+    image: my-frontend:1.0
+    container_name: frontend
+    networks:
+      - app-network
+    restart: unless-stopped
+
   httpd:
     build:
       context: ./docker-httpd
@@ -37,6 +46,7 @@ services:
     container_name: httpd
     depends_on:
       - backend
+      - frontend
     ports:
       - "8080:80"
     networks:
