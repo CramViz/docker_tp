@@ -1,0 +1,17 @@
+# Ignore sensitive ansible files
+ansible/id_rsa
+ansible/*.pem
+ansible/vault_pass.txt
+ansible/group_vars/all/vault.yml
+
+# Maven / build artifacts
+docker-backend-api/target/
+target/
+
+# OS / IDE
+.DS_Store
+.idea/
+*.iml
+
+# Logs
+*.log

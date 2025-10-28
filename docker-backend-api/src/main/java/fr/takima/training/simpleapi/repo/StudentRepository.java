@@ -32,4 +32,32 @@ public class StudentRepository {
       )
     );
   }
+
+  public List<Student> findAll() {
+    String sql = """
+      SELECT s.id, s.first_name, s.last_name, d.id AS dept_id, d.name AS dept_name
+      FROM students s
+      JOIN departments d ON d.id = s.department_id
+      ORDER BY s.id
+      """;
+    return jdbc.query(sql, (rs, rowNum) ->
+      new Student(
+        rs.getLong("id"),
+        rs.getString("first_name"),
+        rs.getString("last_name"),
+        new Department(rs.getLong("dept_id"), rs.getString("dept_name"))
+      )
+    );
+  }
+
+  public List<Department> findAllDepartments() {
+    String sql = """
+      SELECT id, name
+      FROM departments
+      ORDER BY id
+      """;
+    return jdbc.query(sql, (rs, rowNum) ->
+      new Department(rs.getLong("id"), rs.getString("name"))
+    );
+  }
 }
