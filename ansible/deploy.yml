@@ -1,0 +1,111 @@
+------
+
+- name: Deploy Docker application- name: Deploy 3-tier app
+
+  hosts: all  hosts: prod
+
+  become: yes  become: yes
+
+  vars:  gather_facts: true
+
+    backend_image: "cramviz/my-backend:latest"  vars:
+
+    db_image: "cramviz/my-postgres:latest"    ansible_python_interpreter: /usr/bin/python3
+
+    httpd_image: "cramviz/my-httpd:latest"    project_dir: /opt/docker-3tiers
+
+    network_name: "app-network"    git_repo: 'https://github.com/CramViz/docker_tp.git'  # adjust if your repo differs
+
+    network_name: app-network
+
+  tasks:    db_image: my-postgres:1.0
+
+    - name: Install Docker    backend_image: my-backend:api-1.1
+
+      apt:    httpd_image: my-httpd:1.1
+
+        name:    db_env:
+
+          - docker.io      POSTGRES_DB: db
+
+          - docker-compose      POSTGRES_USER: usr
+
+        state: present      POSTGRES_PASSWORD: pwd
+
+        update_cache: yes    app_env:
+
+      DB_HOST: db
+
+    - name: Start Docker service      DB_NAME: db
+
+      service:      DB_USER: usr
+
+        name: docker      DB_PASSWORD: pwd
+
+        state: started  roles:
+
+        enabled: yes    - install_docker
+
+    - create_network
+
+    - name: Create Docker network    - launch_database
+
+      community.docker.docker_network:    - launch_app
+
+        name: "{{ network_name }}"    - launch_proxy
+
+        state: present
+
+    - name: Pull backend image
+      community.docker.docker_image:
+        name: "{{ backend_image }}"
+        source: pull
+        state: present
+
+    - name: Stop old backend container
+      community.docker.docker_container:
+        name: backend
+        state: absent
+      ignore_errors: yes
+
+    - name: Run backend container
+      community.docker.docker_container:
+        name: backend
+        image: "{{ backend_image }}"
+        state: started
+        restart_policy: always
+        networks:
+          - name: "{{ network_name }}"
+        env:
+          DB_HOST: "db"
+          DB_NAME: "db"
+          DB_USER: "usr"
+          DB_PASSWORD: "pwd"
+        ports:
+          - "8080:8080"
+
+    - name: Stop old httpd container
+      community.docker.docker_container:
+        name: httpd
+        state: absent
+      ignore_errors: yes
+
+    - name: Run httpd container
+      community.docker.docker_container:
+        name: httpd
+        image: "{{ httpd_image }}"
+        state: started
+        restart_policy: always
+        networks:
+          - name: "{{ network_name }}"
+        ports:
+          - "80:80"
+
+    - name: Wait for backend to be healthy
+      uri:
+        url: "http://localhost:8080/api/"
+        status_code: 200
+      register: result
+      until: result.status == 200
+      retries: 30
+      delay: 2

@@ -1,0 +1,17 @@
+all:all:
+
+  vars:  vars:
+
+    ansible_user: admin    ansible_user: admin
+
+    ansible_ssh_private_key_file: ~/.ssh/id_rsa    ansible_python_interpreter: /usr/bin/python3
+
+  children:    ansible_ssh_private_key_file: /Users/vicram/.ssh/id_takima_vicram
+
+    prod:  children:
+
+      hosts:    prod:
+
+        vicram.selva.takima.cloud:      hosts:
+
+        vicram.selva.takima.cloud:
