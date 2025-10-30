@@ -90,27 +90,25 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Install Ansible
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ansible
-
       - name: Create Ansible vault password file
         run: |
-          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > /tmp/vault_pass.txt
-          chmod 600 /tmp/vault_pass.txt
+          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > vault_pass.txt
+          chmod 600 vault_pass.txt
 
-      - name: Deploy with Ansible
+      - name: Deploy with Ansible via Docker
         run: |
-          cd ansible
-          ansible-playbook -i inventories/setup.yml deploy.yml \
-            --vault-password-file /tmp/vault_pass.txt \
-            -e "backend_image=${{ secrets.DOCKERHUB_USERNAME }}/my-backend:latest"
+          docker run --rm \
+            -v $(pwd)/ansible:/ansible \
+            -v ~/.ssh:/root/.ssh:ro \
+            -v $(pwd)/vault_pass.txt:/vault_pass.txt:ro \
+            cytopia/ansible:latest-tools \
+            ansible-playbook -i /ansible/inventories/setup.yml /ansible/deploy.yml \
+              --vault-password-file /vault_pass.txt
 
       - name: Clean up sensitive files
         if: always()
         run: |
-          rm -f ~/.ssh/id_rsa /tmp/vault_pass.txt
+          rm -f ~/.ssh/id_rsa vault_pass.txt
 
       - name: Health check
         run: |

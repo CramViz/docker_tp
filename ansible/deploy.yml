@@ -5,15 +5,15 @@
   gather_facts: true
   vars:
     ansible_python_interpreter: /usr/bin/python3
-    backend_image: "cramviz/my-backend:latest"
-    frontend_image: "cramviz/my-frontend:latest"
-    httpd_image: "cramviz/my-httpd:latest"
+    backend_image: "{{ dockerhub_username }}/my-backend:latest"
+    frontend_image: "{{ dockerhub_username }}/my-frontend:latest"
+    httpd_image: "{{ dockerhub_username }}/my-httpd:latest"
     network_name: app-network
     app_env:
-      DB_HOST: db
-      DB_NAME: db
-      DB_USER: usr
-      DB_PASSWORD: pwd
+      DB_HOST: "{{ db_host }}"
+      DB_NAME: "{{ db_name }}"
+      DB_USER: "{{ db_user }}"
+      DB_PASSWORD: "{{ db_password }}"
 
   tasks:
     - name: Install required packages
