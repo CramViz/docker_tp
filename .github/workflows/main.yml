@@ -49,7 +49,7 @@ jobs:
         with:
           context: ./docker-backend-api
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-backend:latest
-          push: ${{ github.ref == 'refs/heads/main' }}
+          push: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' }}
 
       # Database
       - name: Build image and push database
@@ -57,7 +57,7 @@ jobs:
         with:
           context: ./docker-db
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-postgres:latest
-          push: ${{ github.ref == 'refs/heads/main' }}
+          push: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' }}
 
       # HTTPD
       - name: Build image and push httpd
@@ -65,7 +65,7 @@ jobs:
         with:
           context: ./docker-httpd
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-httpd:latest
-          push: ${{ github.ref == 'refs/heads/main' }}
+          push: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' }}
 
       # Frontend
       - name: Build image and push frontend
@@ -73,7 +73,7 @@ jobs:
         with:
           context: ./docker-frontend
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-frontend:latest
-          push: ${{ github.ref == 'refs/heads/main' }}
+          push: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' }}
 
   # Job 3: Deploy
   deploy:
